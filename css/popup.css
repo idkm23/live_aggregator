@@ -1,0 +1,111 @@
+html {
+  font-family: Roobert,Helvetica Neue,Helvetica,Arial,sans-serif
+}
+body {
+  margin: 0;
+  background-color: #1f1f23;
+  min-width: 240px;
+  min-height: 44.4px;
+}
+a {
+  text-decoration: none;
+}
+#live-list {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  max-height: 350px;
+  overflow: hidden;
+}
+.live-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  width: 220px;
+  padding: 5px 10px;
+  font-size: 14px;
+  font-weight: 400;
+  text-size-adjust: 100%;
+  color: #dedee3;
+}
+.live-row:hover {
+   background-color: #26262c;
+}
+#scrollbar-track {
+    bottom: 0;
+    position: absolute;
+    right: 2px;
+    width: 9px;
+    height: 100%;
+    z-index: 1;
+}
+#scrollbar {
+  visibility: hidden;
+  width: 6px;
+  height: 50%;
+  border-style: solid;
+  border-width: 1px;
+  border-color: rgb(239, 239, 241);
+  border-radius: 7px;
+  opacity: 0.2;
+}
+.stream-avatar {
+  display: inline-block;
+  border-radius: 50%;
+
+  /* Sets width to 30px in flex. */
+  flex-basis: 30px;
+  flex-grow: 0;
+  flex-shrink: 0;
+  height: 30px;
+}
+.live-row-text-panel {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  justify-content: space-between;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.name-and-game {
+  display: block;
+  width: 100%;
+  margin-left: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stream-name {
+}
+.stream-game {
+  font-size: 12px;
+  color: rgb(173, 173, 184);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.view-count-panel {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  margin-left: 5px;
+  width: 45px;
+}
+.live-symbol {
+  border-radius: 50%;
+  height: 8px;
+  width: 8px;
+  display: inline-block;
+}
+.twitch-live-symbol {
+  background-color: rgb(169, 112, 255);
+}
+.mixer-live-symbol {
+  background-color: #4ab8eb;
+}
+.view-count-text {
+  display: inline-block;
+  font-size: 12px;
+  margin-left: 5px;
+}

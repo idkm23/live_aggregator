@@ -1,0 +1,32 @@
+{
+  "name": "Getting Started Example",
+  "version": "1.0",
+  "description": "Build an Extension!",
+  "permissions": [
+    "activeTab",
+    "cookies",
+    "declarativeContent",
+    "storage",
+    "*://*.youtube.com/",
+    "*://*.twitch.tv/",
+    "*://*.mixer.com/"
+  ],
+  "options_page": "options.html",
+  "background": {
+    "scripts": [
+      "util.js",
+      "background.js"
+     ],
+    "persistent": false
+  },
+  "page_action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "128": "images/live_aggregator.png"
+    }
+  },
+  "icons": {
+    "128": "images/live_aggregator.png"
+  },
+  "manifest_version": 2
+}

@@ -1,7 +1,7 @@
 {
-  "name": "Getting Started Example",
+  "name": "Live Aggregator",
   "version": "1.0",
-  "description": "Build an Extension!",
+  "description": "Organizes all the live streamers you follow into one place.",
   "permissions": [
     "activeTab",
     "cookies",

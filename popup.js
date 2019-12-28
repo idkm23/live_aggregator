@@ -1,6 +1,7 @@
 'use strict';
 
 var live_list = document.getElementById('live-list');
+var spinner = document.getElementById('spinner');
 
 function sendMessagePromise(topic) {
   return new Promise((resolve, reject) => {
@@ -65,11 +66,14 @@ function getStreamerObjsAndUpdatePopup() {
     streamer_objs.forEach((streamer_obj) => {
       addStreamToExtensionPopup(streamer_obj, new_live_list);
     });
+    spinner.style.display = "none";
+
+    let scroll_height = live_list.scrollTop;
     live_list.parentNode.replaceChild(new_live_list, live_list);
     live_list = new_live_list;
+    live_list.scrollTop = scroll_height;
   });
 }
 
-setTimeout(getStreamerObjsAndUpdatePopup, 2000);
-//getStreamerObjsAndUpdatePopup();
-//setInterval(() => getStreamerObjsAndUpdatePopup(), 1000);
+getStreamerObjsAndUpdatePopup();
+setInterval(() => getStreamerObjsAndUpdatePopup(), 1000);

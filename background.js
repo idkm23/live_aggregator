@@ -37,8 +37,10 @@ function makeRestRequest(options) {
             resolve(JSON.parse(xhr.responseText));
           }
         } else {
-          console.log(`Error ${xhr.status}: ${xhr.statusText}`);
-          reject(`Error ${xhr.status}: ${xhr.statusText}`);
+          let e = 
+              `Error ${xhr.status}: ${xhr.statusText} to url: ${options.url}`;
+          console.log(e);
+          reject(e);
         }
       };
 
@@ -74,26 +76,26 @@ function makeTwitchRestRequest(auth_token) {
        'extensions': {
          'persistedQuery': {
            'version': 1,
-           'sha256Hash': 'f5e7de43821b57e94721d314c1439a13a732fc148b3f09e914c7b00c9167463a'
+           'sha256Hash':
+            'f5e7de43821b57e94721d314c1439a13a732fc148b3f09e914c7b00c9167463a'
          }
        }
     }]
   });
 }
 
-function makeMixerRestRequest(auth_token) {
+function makeMixerRestRequest() {
   return makeRestRequest({
     method: 'GET',
     url:
       'https://mixer.com/api/v1/users/67550712/follows?limit=32&page=0&order=online:desc,viewersCurrent:desc,token:desc',
-    headers: {
-      'Set-Cookie': '__bcsrf="${auth_token}"; SameSite=None; Secure',
-    }
+    headers: {}
   });
 }
 
 function fetchTwitchStreamerObjs() {
   return new Promise((resolve, reject) => {
+    // Need to fetch a cookie and put it as a (weird) header to our request.
     getCookie('https://twitch.tv', 'auth-token')
       .then((auth_token) => makeTwitchRestRequest(auth_token))
       .then((twitch_response) => {
@@ -101,10 +103,21 @@ function fetchTwitchStreamerObjs() {
             twitch_response[0]['data']['currentUser']['followedLiveUsers']['nodes'];
         let new_streamer_objs = [];
         followed_live_users.forEach(live_user => {
+          if (live_user['stream']['type'] == 'rerun') {
+            return;
+          }
+
+          // Can be null if streamer is not under a category.
+          let game_dict = live_user['stream']['game'];
+          let game_title = '';
+          if (game_dict) {
+            game_title = game_dict['displayName'];
+          }
+
           new_streamer_objs.push({
             avatar: live_user['profileImageURL'],
             name: live_user['displayName'],
-            game: live_user['stream']['game']['displayName'],
+            game: game_title,
             view_count: live_user['stream']['viewersCount'],
             link: 'https://twitch.tv/' + live_user['login'],
             platform: Platform.TWITCH
@@ -113,17 +126,18 @@ function fetchTwitchStreamerObjs() {
         twitch_streamer_objs = new_streamer_objs;
         resolve(twitch_streamer_objs);
       })
-      .catch(error => reject(error.message));
+      .catch(error => {
+        reject(error);
+      });
   });
 }
 
 function fetchMixerStreamerObjs() {
   return new Promise((resolve, reject) => {
-    getCookie('https://mixer.com', '__bcsrf')
-      .then((auth_token) => makeMixerRestRequest(auth_token))
+    // Cookies set automatically by browser.
+    makeMixerRestRequest()
       .then((mixer_response) => {
         let new_streamer_objs = [];
-        console.log(mixer_response);
         mixer_response.forEach(live_user => {
           if (live_user['online']) {
             new_streamer_objs.push({
@@ -139,7 +153,9 @@ function fetchMixerStreamerObjs() {
         mixer_streamer_objs = new_streamer_objs;
         resolve(mixer_streamer_objs);
       })
-      .catch(error => reject(error.message));
+      .catch(error => {
+        reject(error);
+      });
   });
 }
 
@@ -155,13 +171,14 @@ function fetchStreamerObjs() {
     let mixer_promise = fetchMixerStreamerObjs();
     let youtube_promise = fetchYoutubeStreamerObjs();
 
-    await twitch_promise;
-    await mixer_promise;
-    await youtube_promise;
+    await twitch_promise.catch(e => { console.log(e); });
+    await mixer_promise.catch(e => { console.log(e); });
+    await youtube_promise.catch(e => { console.log(e); });
 
     streamer_objs = twitch_streamer_objs
       .concat(mixer_streamer_objs)
       .concat(youtube_streamer_objs);
+    chrome.browserAction.setBadgeText({text: streamer_objs.length.toString()});
 
     streamer_objs = streamer_objs.sort((a, b) => {
       if (a.view_count > b.view_count) {

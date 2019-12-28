@@ -30,31 +30,20 @@ function makeRestRequest(options) {
       xhr.setRequestHeader(header_key, options.headers[header_key]);
     }
 
-    if (options.method == 'POST') {
-      xhr.onreadystatechange = () => {
-        if (xhr.status == 200) {
-          if (xhr.readyState == XMLHttpRequest.DONE) {
-            resolve(JSON.parse(xhr.responseText));
-          }
-        } else {
-          let e = 
-              `Error ${xhr.status}: ${xhr.statusText} to url: ${options.url}`;
-          console.log(e);
-          reject(e);
-        }
-      };
-
-      xhr.send(JSON.stringify(options.data));
-    } else if (options.method == 'GET') {
-      xhr.onload = function() {
+    xhr.onreadystatechange = () => {
+      if (xhr.status == 200) {
         if (xhr.readyState == XMLHttpRequest.DONE) {
           resolve(JSON.parse(xhr.responseText));
         }
+      } else {
+        let e =
+            `Error ${xhr.status}: ${xhr.statusText} to url: ${options.url}`;
+        console.log(e);
+        reject(e);
       }
+    };
 
-      xhr.send(null);
-    }
-
+    xhr.send(JSON.stringify(options.data));
   });
 }
 
@@ -127,7 +116,8 @@ function fetchTwitchStreamerObjs() {
         resolve(twitch_streamer_objs);
       })
       .catch(error => {
-        reject(error);
+        console.log("Unable to reach Twitch: ", error);
+        resolve([]);
       });
   });
 }
@@ -154,7 +144,8 @@ function fetchMixerStreamerObjs() {
         resolve(mixer_streamer_objs);
       })
       .catch(error => {
-        reject(error);
+        console.log("Unable to reach Mixer: ", error);
+        resolve([]);
       });
   });
 }
@@ -171,9 +162,9 @@ function fetchStreamerObjs() {
     let mixer_promise = fetchMixerStreamerObjs();
     let youtube_promise = fetchYoutubeStreamerObjs();
 
-    await twitch_promise.catch(e => { console.log(e); });
-    await mixer_promise.catch(e => { console.log(e); });
-    await youtube_promise.catch(e => { console.log(e); });
+    await twitch_promise;
+    await mixer_promise;
+    await youtube_promise;
 
     streamer_objs = twitch_streamer_objs
       .concat(mixer_streamer_objs)

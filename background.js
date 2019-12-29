@@ -5,6 +5,8 @@ var twitch_streamer_objs = [];
 var mixer_streamer_objs = [];
 var youtube_streamer_objs = [];
 
+var cached_ytcfg = {};
+
 var streamer_objs_promise;
 
 function getCookie(cookie_url, cookie_name) {
@@ -33,12 +35,12 @@ function makeRestRequest(options) {
     xhr.onreadystatechange = () => {
       if (xhr.status == 200) {
         if (xhr.readyState == XMLHttpRequest.DONE) {
-          resolve(JSON.parse(xhr.responseText));
+          resolve((options.json ?
+              JSON.parse(xhr.responseText) : xhr.responseText));
         }
       } else {
         let e =
             `Error ${xhr.status}: ${xhr.statusText} to url: ${options.url}`;
-        console.log(e);
         reject(e);
       }
     };
@@ -69,7 +71,8 @@ function makeTwitchRestRequest(auth_token) {
             'f5e7de43821b57e94721d314c1439a13a732fc148b3f09e914c7b00c9167463a'
          }
        }
-    }]
+    }],
+    json: true
   });
 }
 
@@ -78,7 +81,59 @@ function makeMixerRestRequest() {
     method: 'GET',
     url:
       'https://mixer.com/api/v1/users/67550712/follows?limit=32&page=0&order=online:desc,viewersCurrent:desc,token:desc',
-    headers: {}
+    headers: {},
+    json: true
+  });
+}
+
+// Scrapes auth data from the user's youtube to make the request.
+function fetchYtcfg() {
+  return new Promise((resolve, reject) => {
+    if (Object.keys(cached_ytcfg).length > 0) {
+      resolve(cached_ytcfg);
+    };
+
+    makeRestRequest({
+      method: 'GET',
+      url: 'https://www.youtube.com',
+      headers: {}
+    })
+      .then((response) => {
+        var fake_html = document.createElement('html');
+        fake_html.innerHTML = response;
+        Array.prototype.slice.call(fake_html.getElementsByTagName('script')).forEach(script => {
+          let script_str = script.innerHTML;
+          if (script_str.includes('XSRF_TOKEN')) {
+            let xsrf_matches = script_str.match(new RegExp('"XSRF_TOKEN":"([a-zA-Z0-9]+=)"'));
+            let client_matches = script_str.match(new RegExp('"INNERTUBE_CONTEXT_CLIENT_VERSION":"([\\d.]+)"'));
+            if (xsrf_matches.length == 2 && client_matches.length == 2) {
+              cached_ytcfg['XSRF_TOKEN'] = xsrf_matches[1];
+              cached_ytcfg['INNERTUBE_CONTEXT_CLIENT_VERSION'] = client_matches[1];
+              resolve(cached_ytcfg);
+            }
+          }
+      });
+      reject("Couldn't fetch YouTube ytcfg.");
+    });
+  });
+}
+
+function fetchFollowedYouTubeChannels(ytcfg) {
+  return makeRestRequest({
+    method: 'GET',
+    url:
+      'https://www.youtube.com/guide_ajax?action_load_guide=1',
+    headers: {
+      'x-youtube-client-name': '1',
+      'x-youtube-identity-token': ytcfg['XSRF_TOKEN'],
+      'x-youtube-client-version': ytcfg['INNERTUBE_CONTEXT_CLIENT_VERSION']
+    },
+    json: true
+  });
+}
+
+function fetchYouTubeLiveViewCount(channels) {
+  return makeRestRequest({
   });
 }
 
@@ -150,9 +205,64 @@ function fetchMixerStreamerObjs() {
   });
 }
 
+function buildYoutubeObj(renderer) {
+  if (renderer['badges'] && renderer['badges']['liveBroadcasting']) {
+    try {
+      return {
+        avatar: renderer['thumbnail']['thumbnails'][0]['url'],
+        name: renderer['title'],
+        game: '', // No easy API for this.
+        view_count: 0, // No easy API for this.
+        link: 'https://youtube.com/channel/'
+          + renderer['navigationEndpoint']['browseEndpoint']['browseId']
+          + '/live',
+        platform: Platform.YOUTUBE
+      };
+    } catch(e) {
+      console.err('Failed to build youtube obj for: ' + renderer);
+    }
+  }
+}
 function fetchYoutubeStreamerObjs() {
   return new Promise((resolve, reject) => {
-    resolve(youtube_streamer_objs);
+    fetchYtcfg()
+      .then((ytcfg) => fetchFollowedYouTubeChannels(ytcfg))
+      .then((youtube_response) => {
+        let new_streamer_objs = [];
+        youtube_response['response']['items'].forEach(item => {
+          let subs = item['guideSubscriptionsSectionRenderer'];
+          if (subs) {
+            subs['items'].forEach(item => {
+              let guideEntry = item['guideEntryRenderer'];
+              if (guideEntry) {
+                let youtube_obj = buildYoutubeObj(guideEntry);
+                if (youtube_obj) {
+                  new_streamer_objs.push(youtube_obj);
+                }
+              }
+
+              let hidden_subs = item['guideCollapsibleEntryRenderer'];
+              if (hidden_subs) {
+                hidden_subs['expandableItems'].forEach(item => {
+                  let guideEntry = item['guideEntryRenderer'];
+                  if (guideEntry) {
+                    let youtube_obj = buildYoutubeObj(guideEntry);
+                    if (youtube_obj) {
+                      new_streamer_objs.push(youtube_obj);
+                    }
+                  }
+                });
+              }
+            });
+          }
+        });
+        youtube_streamer_objs = new_streamer_objs;
+        resolve(youtube_streamer_objs);
+      })
+      .catch(error => {
+        console.log("Unable to reach YouTube: ", error);
+        resolve([]);
+      });
   });
 }
 

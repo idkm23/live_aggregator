@@ -4,7 +4,7 @@ html {
 body {
   margin: 0;
   background-color: #1f1f23;
-  min-width: 240px;
+  min-width: 245.6px;
   min-height: 44.4px;
 }
 #spinner {
@@ -113,6 +113,9 @@ a {
 }
 .mixer-live-symbol {
   background-color: #4ab8eb;
+}
+.youtube-live-symbol {
+  background-color: rgb(204, 0, 0);
 }
 .view-count-text {
   display: inline-block;

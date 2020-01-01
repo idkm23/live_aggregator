@@ -13,10 +13,7 @@
   ],
   "options_page": "options.html",
   "background": {
-    "scripts": [
-      "util.js",
-      "background.js"
-     ],
+    "page": "background.html",
     "persistent": false
   },
   "browser_action": {

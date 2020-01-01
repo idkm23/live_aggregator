@@ -1,5 +1,7 @@
 'use strict';
 
+import Platform from './util.js';
+
 var live_list = document.getElementById('live-list');
 var spinner = document.getElementById('spinner');
 
@@ -50,6 +52,9 @@ function addStreamToExtensionPopup(stream_obj, ol) {
 }
 
 function numFormatter(num) {
+  if (typeof num == "string") {
+    return 0;
+  }
   if (num >= 1000000) {
     return Math.round(num/100000)/10 + 'M';
   } else if (num >= 1000) {

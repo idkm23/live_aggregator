@@ -5,3 +5,5 @@ const Platform = {
   MIXER: 'mixer',
   YOUTUBE: 'youtube'
 };
+
+export default Platform;

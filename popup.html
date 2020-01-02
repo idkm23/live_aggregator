@@ -4,9 +4,31 @@
     <link href="css/popup.css" rel="stylesheet" type="text/css">
   </head>
   <body>
-    <div id="spinner"></div>
-    <ol id="live-list"></ol>
-    <!--<script type="module" src="util.js"></script>-->
+    <div id='main'>
+      <div id='top-bumper'></div>
+      <div id='empty-list-msg'>No ones online right now.</div>
+      <div id="spinner"></div>
+      <ol id="live-list"></ol>
+      <div id="status-bar">
+        <div id="status-bar-inner">
+          <div id="twitch-status-wrap" class="status-fail">
+            <svg id="twitch-status" class="status-icon">
+              <use href="images/twitch_logo.svg#icon"></use>
+            </svg>
+          </div>
+          <div id="mixer-status-wrap" class="status-fail">
+            <svg id="mixer-status" class="status-icon">
+              <use href="images/mixer_logo.svg#icon"></use>
+            </svg>
+          </div>
+          <div id="youtube-status-wrap" class="status-fail">
+            <svg id="youtube-status" class="status-icon">
+              <use href="images/youtube_logo.svg#icon"></use>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="popup.js"></script>
   </body>
 </html>

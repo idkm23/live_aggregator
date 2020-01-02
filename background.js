@@ -7,6 +7,10 @@ var twitch_streamer_objs = [];
 var mixer_streamer_objs = [];
 var youtube_streamer_objs = [];
 
+var twitch_status = false;
+var mixer_status = false;
+var youtube_status = false;
+
 var cached_ytcfg = {};
 
 var streamer_objs_promise;
@@ -19,10 +23,14 @@ function getCookie(cookie_url, cookie_name) {
     };
     chrome.cookies.get(
       options,
-      ({value: cookie}) => {
-        resolve(cookie);
+      (cookie) => {
+        if (cookie) {
+          resolve(cookie.value);
+        } else {
+          reject(`Can't get cookie: ${cookie_name}`);
+        }
       }
-    );
+    )
   });
 }
 
@@ -77,11 +85,29 @@ function makeTwitchRestRequest(auth_token) {
   });
 }
 
-function makeMixerRestRequest() {
+function fetchMixerUser() {
+  return new Promise((resolve, reject) => {
+    makeRestRequest({
+      method: 'GET',
+      url: 'https://mixer.com/api/v1/users/current',
+      headers: {},
+      json: true
+    })
+    .then(response => {
+      console.log(response);
+      resolve(response.id);
+    })
+    .catch(e => {
+      reject(e);
+    });
+  });
+}
+
+function fetchFollowedMixerChannels(user_id) {
   return makeRestRequest({
     method: 'GET',
     url:
-      'https://mixer.com/api/v1/users/67550712/follows?limit=32&page=0&order=online:desc,viewersCurrent:desc,token:desc',
+      `https://mixer.com/api/v1/users/${user_id}/follows?limit=32&page=0&order=online:desc,viewersCurrent:desc,token:desc`,
     headers: {},
     json: true
   });
@@ -99,7 +125,7 @@ function fetchYtcfg() {
       url: 'https://www.youtube.com',
       headers: {}
     })
-      .then((response) => {
+    .then((response) => {
         var fake_html = document.createElement('html');
         fake_html.innerHTML = response;
         Array.prototype.slice.call(fake_html.getElementsByTagName('script')).forEach(script => {
@@ -108,6 +134,7 @@ function fetchYtcfg() {
             let xsrf_matches = script_str.match(new RegExp('"XSRF_TOKEN":"([a-zA-Z0-9]+=)"'));
             let client_matches = script_str.match(new RegExp('"INNERTUBE_CONTEXT_CLIENT_VERSION":"([\\d.]+)"'));
             if (xsrf_matches.length == 2 && client_matches.length == 2) {
+              console.log(script_str);
               cached_ytcfg.XSRF_TOKEN = xsrf_matches[1];
               cached_ytcfg.INNERTUBE_CONTEXT_CLIENT_VERSION = client_matches[1];
               resolve(cached_ytcfg);
@@ -115,6 +142,9 @@ function fetchYtcfg() {
           }
       });
       reject("Couldn't fetch YouTube ytcfg.");
+    })
+    .catch(e => {
+      reject(e);
     });
   });
 }
@@ -144,10 +174,8 @@ function fetchYouTubeLiveViewCount(channel) {
       Array.prototype.slice.call(fake_html.getElementsByTagName('script')).forEach(script => {
         let script_str = script.innerHTML;
         if (script_str.includes('watching now')) {
-          console.log(script_str);
           let viewers_matches = script_str.match(
               new RegExp('([\\d,]+)\ watching\ now'));
-          console.log(viewers_matches);
           if (viewers_matches.length >= 2) {
             let num = parseInt(viewers_matches[1].replace(',', ''));
             resolve(num);
@@ -156,6 +184,9 @@ function fetchYouTubeLiveViewCount(channel) {
           }
         }
       });
+    })
+    .catch(e => {
+      reject(e);
     });
   });
 }
@@ -190,21 +221,26 @@ function fetchTwitchStreamerObjs() {
             platform: Platform.TWITCH
           });
         });
+        twitch_status = true;
         twitch_streamer_objs = new_streamer_objs;
         resolve(twitch_streamer_objs);
       })
       .catch(error => {
+        twitch_status = false;
         console.log("Unable to reach Twitch: ", error);
-        resolve([]);
+        twitch_streamer_objs = [];
+        resolve(twitch_streamer_objs);
       });
   });
 }
 
 function fetchMixerStreamerObjs() {
   return new Promise((resolve, reject) => {
-    // Cookies set automatically by browser.
-    makeMixerRestRequest()
-      .then((mixer_response) => {
+    fetchMixerUser()
+      .then(user_id => {
+        return fetchFollowedMixerChannels(user_id);
+      })
+      .then(mixer_response => {
         let new_streamer_objs = [];
         mixer_response.forEach(live_user => {
           if (live_user.online) {
@@ -218,12 +254,15 @@ function fetchMixerStreamerObjs() {
             });
           }
         });
+        mixer_status = true;
         mixer_streamer_objs = new_streamer_objs;
         resolve(mixer_streamer_objs);
       })
       .catch(error => {
+        mixer_status = false;
         console.log("Unable to reach Mixer: ", error);
-        resolve([]);
+        mixer_streamer_objs = [];
+        resolve(mixer_streamer_objs);
       });
   });
 }
@@ -278,6 +317,11 @@ function fetchYoutubeStreamerObjs() {
             });
           }
         });
+        if (youtube_response.response.items.length == 0) {
+          youtube_status = false;
+        } else {
+          youtube_status = true;
+        }
         youtube_streamer_objs = new_streamer_objs;
         return new_streamer_objs;
       }).then(new_streamer_objs => {
@@ -295,8 +339,10 @@ function fetchYoutubeStreamerObjs() {
         resolve(youtube_streamer_objs);
       })
       .catch(error => {
+        youtube_status = false;
         console.log("Unable to reach YouTube: ", error);
-        resolve([]);
+        youtube_streamer_objs = [];
+        resolve(youtube_streamer_objs);
       });
   });
 }
@@ -336,16 +382,21 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-async function waitForStreamerObjs() {
+async function waitForLiveData() {
   if (streamer_objs.length === 0) {
     await streamer_objs_promise;
   }
-  return streamer_objs;
+  return {
+    streamer_objs: streamer_objs,
+    twitch_status: twitch_status,
+    mixer_status: mixer_status,
+    youtube_status: youtube_status
+  };
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.topic === 'getStreamerObjs') {
-    waitForStreamerObjs().then(sendResponse);
+    waitForLiveData().then(sendResponse);
   }
   return true;
 });

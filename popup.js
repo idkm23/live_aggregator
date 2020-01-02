@@ -4,6 +4,8 @@ import Platform from './util.js';
 
 var live_list = document.getElementById('live-list');
 var spinner = document.getElementById('spinner');
+var status_bar = document.getElementById('status-bar');
+var empty_list_msg = document.getElementById('empty-list-msg');
 
 function sendMessagePromise(topic) {
   return new Promise((resolve, reject) => {
@@ -64,19 +66,52 @@ function numFormatter(num) {
   }
 }
 
+var twitch_status_div = document.getElementById("twitch-status-wrap");
+var mixer_status_div = document.getElementById("mixer-status-wrap");
+var youtube_status_div = document.getElementById("youtube-status-wrap");
+function updateStatuses(live_data) {
+  function updateStatus(status_div, status_bool, platform) {
+    if (status_bool) {
+      status_div.setAttribute('title', `Successfully reached ${platform}`);
+      status_div.classList.remove("status-fail");
+      status_div.classList.add("status-success");
+    } else {
+      status_div.setAttribute('title', `Failed to reach ${platform}.`);
+      status_div.classList.remove("status-success");
+      status_div.classList.add("status-fail");
+    }
+  }
+  updateStatus(twitch_status_div, live_data.twitch_status, "Twitch");
+  updateStatus(mixer_status_div, live_data.mixer_status, "Mixer");
+  updateStatus(youtube_status_div, live_data.youtube_status, "YouTube");
+}
+
 function getStreamerObjsAndUpdatePopup() {
-  sendMessagePromise('getStreamerObjs').then((streamer_objs) => {
+  sendMessagePromise('getStreamerObjs').then((live_data) => {
     let new_live_list = document.createElement('ol');
     new_live_list.id = 'live-list';
-    streamer_objs.forEach((streamer_obj) => {
+    live_data.streamer_objs.forEach((streamer_obj) => {
       addStreamToExtensionPopup(streamer_obj, new_live_list);
     });
-    spinner.style.display = "none";
+    live_data.streamer_objs.forEach((streamer_obj) => {
+      addStreamToExtensionPopup(streamer_obj, new_live_list);
+    });
+    live_data.streamer_objs.forEach((streamer_obj) => {
+      addStreamToExtensionPopup(streamer_obj, new_live_list);
+    });
+
+    spinner.style.display = 'none';
+    if (live_data.streamer_objs.length == 0) {
+      empty_list_msg.style.display = 'block';
+    } else {
+      empty_list_msg.style.display = 'none';
+    }
 
     let scroll_height = live_list.scrollTop;
     live_list.parentNode.replaceChild(new_live_list, live_list);
     live_list = new_live_list;
     live_list.scrollTop = scroll_height;
+    updateStatuses(live_data);
   });
 }
 

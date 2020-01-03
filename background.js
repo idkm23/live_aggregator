@@ -30,7 +30,7 @@ function getCookie(cookie_url, cookie_name) {
           reject(`Can't get cookie: ${cookie_name}`);
         }
       }
-    )
+    );
   });
 }
 
@@ -388,6 +388,9 @@ async function waitForLiveData() {
   }
   return {
     streamer_objs: streamer_objs,
+    twitch_streamer_objs: twitch_streamer_objs,
+    mixer_streamer_objs: mixer_streamer_objs,
+    youtube_streamer_objs: youtube_streamer_objs,
     twitch_status: twitch_status,
     mixer_status: mixer_status,
     youtube_status: youtube_status

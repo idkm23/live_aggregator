@@ -2,11 +2,6 @@
 
 import Platform from './util.js';
 
-var live_list = document.getElementById('live-list');
-var spinner = document.getElementById('spinner');
-var status_bar = document.getElementById('status-bar');
-var empty_list_msg = document.getElementById('empty-list-msg');
-
 function sendMessagePromise(topic) {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage({topic: topic}, response => {
@@ -19,15 +14,8 @@ function sendMessagePromise(topic) {
   });
 }
 
-function htmlToElement(html) {
-  let template = document.createElement('template');
-  html = html.trim();
-  template.innerHTML = html;
-  return template.content.firstChild;
-}
-
 function addStreamToExtensionPopup(stream_obj, ol) {
-  let live_row = htmlToElement(`
+  let live_row = $(`
     <a href='${stream_obj.link}'>
       <li class='live-row'>
         <img class='stream-avatar' src='${stream_obj.avatar}' />
@@ -46,11 +34,12 @@ function addStreamToExtensionPopup(stream_obj, ol) {
       </li>
     </a>
   `);
-  live_row.onclick = () => {
-    chrome.tabs.create({url: live_row.href});
-  };
+  live_row.click(() => {
+    console.log(live_row);
+    chrome.tabs.create({url: live_row.attr('href')});
+  });
 
-  ol.appendChild(live_row);
+  ol.append(live_row);
 }
 
 function numFormatter(num) {
@@ -70,50 +59,79 @@ var twitch_status_div = document.getElementById("twitch-status-wrap");
 var mixer_status_div = document.getElementById("mixer-status-wrap");
 var youtube_status_div = document.getElementById("youtube-status-wrap");
 function updateStatuses(live_data) {
-  function updateStatus(status_div, status_bool, platform) {
+  function updateStatus(status_div, status_bool, platform, stream_count) {
     if (status_bool) {
-      status_div.setAttribute('title', `Successfully reached ${platform}`);
+      status_div.setAttribute('title',
+        `${stream_count} live on ${platform}`);
       status_div.classList.remove("status-fail");
       status_div.classList.add("status-success");
     } else {
-      status_div.setAttribute('title', `Failed to reach ${platform}.`);
+      status_div.setAttribute('title', `Failed to reach ${platform}`);
       status_div.classList.remove("status-success");
       status_div.classList.add("status-fail");
     }
   }
-  updateStatus(twitch_status_div, live_data.twitch_status, "Twitch");
-  updateStatus(mixer_status_div, live_data.mixer_status, "Mixer");
-  updateStatus(youtube_status_div, live_data.youtube_status, "YouTube");
+  updateStatus(twitch_status_div, live_data.twitch_status, "Twitch",
+    live_data.twitch_streamer_objs.length);
+  updateStatus(mixer_status_div, live_data.mixer_status, "Mixer",
+    live_data.mixer_streamer_objs.length);
+  updateStatus(youtube_status_div, live_data.youtube_status, "YouTube",
+    live_data.youtube_streamer_objs.length);
 }
 
+var mouseover_scroll_fn;
 function getStreamerObjsAndUpdatePopup() {
   sendMessagePromise('getStreamerObjs').then((live_data) => {
-    let new_live_list = document.createElement('ol');
-    new_live_list.id = 'live-list';
+    // Fix height so there isn't any crazy height adjustments until after we
+    // update.
+    $('#live-list').css('height', $('#live-list').height());
+    $('#live-list').empty();
     live_data.streamer_objs.forEach((streamer_obj) => {
-      addStreamToExtensionPopup(streamer_obj, new_live_list);
-    });
-    live_data.streamer_objs.forEach((streamer_obj) => {
-      addStreamToExtensionPopup(streamer_obj, new_live_list);
-    });
-    live_data.streamer_objs.forEach((streamer_obj) => {
-      addStreamToExtensionPopup(streamer_obj, new_live_list);
+      addStreamToExtensionPopup(streamer_obj, $('#live-list'));
     });
 
-    spinner.style.display = 'none';
+    $('#spinner').css('display', 'none');
     if (live_data.streamer_objs.length == 0) {
-      empty_list_msg.style.display = 'block';
+      $('.slimScrollDiv').css('display', 'none');
+      $('empty-list-msg').css('display', 'block');
     } else {
-      empty_list_msg.style.display = 'none';
+      $('empty-list-msg').css('display', 'none');
+      $('.slimScrollDiv').css('display', 'block');
     }
 
-    let scroll_height = live_list.scrollTop;
-    live_list.parentNode.replaceChild(new_live_list, live_list);
-    live_list = new_live_list;
-    live_list.scrollTop = scroll_height;
+    // Remove slimScroll if the container is below the max height. Uses
+    // insanely gross jQuery hacks to disable/enable scroll events.
+    let event_fns = $._data($("#live-list")[0], 'events');
+    if (live_data.streamer_objs.length <= 9) {
+      console.log("die");
+      // Save the scrollwheel visibility event for later when we need it.
+      if (mouseover_scroll_fn === undefined) {
+        mouseover_scroll_fn = event_fns.mouseover;
+      }
+      event_fns.mouseover = undefined;
+      $('.scroll-bar').css('display', 'none');
+    } else {
+      console.log("comeback", mouseover_scroll_fn);
+      event_fns.mouseover = mouseover_scroll_fn;
+    }
+
+    // Force the heights of related slimScroll containers because the library
+    // is trash.
+    $('#live-list').css('height', 'auto');
+    $('.slimScrollDiv').css('height', 'auto');
     updateStatuses(live_data);
   });
 }
 
+$(() => {
+  $('#live-list').slimScroll({
+    height: 'auto',
+    size: '6px',
+    color: 'rgb(31, 31, 35)',
+    barClass: 'scroll-bar',
+    opacity: 0.7
+  });
+});
+
 getStreamerObjsAndUpdatePopup();
-setInterval(() => getStreamerObjsAndUpdatePopup(), 1000);
+setInterval(() => getStreamerObjsAndUpdatePopup(), 6000);

@@ -16,7 +16,7 @@ function sendMessagePromise(topic) {
 
 function addStreamToExtensionPopup(stream_obj, ol) {
   let live_row = $(`
-    <a href='${stream_obj.link}'>
+    <a href='${stream_obj.link}' title='${stream_obj.stream_title}'>
       <li class='live-row'>
         <img class='stream-avatar' src='${stream_obj.avatar}' />
         <div class='live-row-text-panel'>
@@ -35,8 +35,17 @@ function addStreamToExtensionPopup(stream_obj, ol) {
     </a>
   `);
   live_row.click(() => {
-    console.log(live_row);
-    chrome.tabs.create({url: live_row.attr('href')});
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+      let current_domain = new URL(tabs[0].url).hostname;
+      if (current_domain.endsWith('twitch.tv') ||
+          current_domain.endsWith('youtube.com') ||
+          current_domain.endsWith('mixer.com') ||
+          current_domain == 'newtab') {
+        chrome.tabs.update({url: live_row.attr('href')});
+      } else {
+        chrome.tabs.create({url: live_row.attr('href')});
+      }
+    });
   });
 
   ol.append(live_row);
@@ -103,15 +112,13 @@ function getStreamerObjsAndUpdatePopup() {
     // insanely gross jQuery hacks to disable/enable scroll events.
     let event_fns = $._data($("#live-list")[0], 'events');
     if (live_data.streamer_objs.length <= 9) {
-      console.log("die");
       // Save the scrollwheel visibility event for later when we need it.
       if (mouseover_scroll_fn === undefined) {
         mouseover_scroll_fn = event_fns.mouseover;
       }
       event_fns.mouseover = undefined;
       $('.scroll-bar').css('display', 'none');
-    } else {
-      console.log("comeback", mouseover_scroll_fn);
+    } else if (mouseover_scroll_fn) {
       event_fns.mouseover = mouseover_scroll_fn;
     }
 

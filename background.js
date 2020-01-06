@@ -14,6 +14,7 @@ var youtube_status = false;
 var cached_ytcfg = {};
 
 var streamer_objs_promise;
+var i;
 
 function getCookie(cookie_url, cookie_name) {
   return new Promise((resolve, reject) => {
@@ -94,7 +95,6 @@ function fetchMixerUser() {
       json: true
     })
     .then(response => {
-      console.log(response);
       resolve(response.id);
     })
     .catch(e => {
@@ -134,7 +134,6 @@ function fetchYtcfg() {
             let xsrf_matches = script_str.match(new RegExp('"XSRF_TOKEN":"([a-zA-Z0-9]+=)"'));
             let client_matches = script_str.match(new RegExp('"INNERTUBE_CONTEXT_CLIENT_VERSION":"([\\d.]+)"'));
             if (xsrf_matches.length == 2 && client_matches.length == 2) {
-              console.log(script_str);
               cached_ytcfg.XSRF_TOKEN = xsrf_matches[1];
               cached_ytcfg.INNERTUBE_CONTEXT_CLIENT_VERSION = client_matches[1];
               resolve(cached_ytcfg);
@@ -163,22 +162,30 @@ function fetchFollowedYouTubeChannels(ytcfg) {
   });
 }
 
-function fetchYouTubeLiveViewCount(channel) {
+function fetchYouTubeLiveViewCountAndTitle(channel) {
   return new Promise((resolve, reject) => {
     makeRestRequest({
       method: 'GET',
       url: channel
     }).then(response => {
-      var fake_html = document.createElement('html');
+      let fake_html = document.createElement('html');
       fake_html.innerHTML = response;
+
+      let view_count_and_title = {};
+      let title_elements = fake_html.getElementsByTagName('title');
+      for (i = 0; i < title_elements.length; i++) {
+        if (title_elements[i].text != 'YouTube') {
+          view_count_and_title.title = title_elements[i].text;
+        }
+      }
       Array.prototype.slice.call(fake_html.getElementsByTagName('script')).forEach(script => {
         let script_str = script.innerHTML;
         if (script_str.includes('watching now')) {
           let viewers_matches = script_str.match(
               new RegExp('([\\d,]+)\ watching\ now'));
           if (viewers_matches.length >= 2) {
-            let num = parseInt(viewers_matches[1].replace(',', ''));
-            resolve(num);
+            view_count_and_title.view_count = parseInt(viewers_matches[1].replace(',', ''));
+            resolve(view_count_and_title);
           } else {
             reject(`Failed to regex view count for ${channel}`);
           }
@@ -215,9 +222,10 @@ function fetchTwitchStreamerObjs() {
           new_streamer_objs.push({
             avatar: live_user.profileImageURL,
             name: live_user.displayName,
+            stream_title: live_user.stream.title,
             game: game_title,
             view_count: live_user.stream.viewersCount,
-            link: 'https://twitch.tv/' + live_user.login,
+            link: 'https://www.twitch.tv/' + live_user.login,
             platform: Platform.TWITCH
           });
         });
@@ -247,9 +255,10 @@ function fetchMixerStreamerObjs() {
             new_streamer_objs.push({
               avatar: live_user.user.avatarUrl,
               name: live_user.user.username,
+              stream_title: live_user.name,
               game: live_user.type.name,
               view_count: live_user.viewersCurrent,
-              link: 'https://mixer.com/' + live_user.user.username,
+              link: 'https://www.mixer.com/' + live_user.user.username,
               platform: Platform.MIXER
             });
           }
@@ -275,7 +284,7 @@ function buildYoutubeObj(renderer) {
         name: renderer.title,
         game: '', // No easy API for this.
         view_count: 0, // No easy API for this.
-        link: 'https://youtube.com/channel/' +
+        link: 'https://www.youtube.com/channel/' +
           renderer.navigationEndpoint.browseEndpoint.browseId + '/live',
         platform: Platform.YOUTUBE
       };
@@ -328,13 +337,15 @@ function fetchYoutubeStreamerObjs() {
         let view_count_promises = [];
         new_streamer_objs.forEach(streamer_obj => {
           view_count_promises.push(
-            fetchYouTubeLiveViewCount(streamer_obj.link));
+            fetchYouTubeLiveViewCountAndTitle(streamer_obj.link));
         });
         return Promise.all(view_count_promises);
-      }).then(view_counts => {
-        let i;
-        for (i = 0; i < view_counts.length; i++) {
-          youtube_streamer_objs[i].view_count = view_counts[i];
+      }).then(view_count_and_titles => {
+        for (i = 0; i < view_count_and_titles.length; i++) {
+          youtube_streamer_objs[i].view_count = 
+              view_count_and_titles[i].view_count;
+          youtube_streamer_objs[i].stream_title =
+              view_count_and_titles[i].title;
         }
         resolve(youtube_streamer_objs);
       })

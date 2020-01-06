@@ -52,7 +52,7 @@ function addStreamToExtensionPopup(stream_obj, ol) {
 }
 
 function numFormatter(num) {
-  if (typeof num == "string") {
+  if (typeof num == 'string') {
     return 0;
   }
   if (num >= 1000000) {
@@ -64,27 +64,27 @@ function numFormatter(num) {
   }
 }
 
-var twitch_status_div = document.getElementById("twitch-status-wrap");
-var mixer_status_div = document.getElementById("mixer-status-wrap");
-var youtube_status_div = document.getElementById("youtube-status-wrap");
+var twitch_status_div = document.getElementById('twitch-status-wrap');
+var mixer_status_div = document.getElementById('mixer-status-wrap');
+var youtube_status_div = document.getElementById('youtube-status-wrap');
 function updateStatuses(live_data) {
   function updateStatus(status_div, status_bool, platform, stream_count) {
     if (status_bool) {
       status_div.setAttribute('title',
         `${stream_count} live on ${platform}`);
-      status_div.classList.remove("status-fail");
-      status_div.classList.add("status-success");
+      status_div.classList.remove('status-fail');
+      status_div.classList.add('status-success');
     } else {
-      status_div.setAttribute('title', `Failed to reach ${platform}`);
-      status_div.classList.remove("status-success");
-      status_div.classList.add("status-fail");
+      status_div.setAttribute('title', `Failed to reach ${platform}, or you're not logged in.`);
+      status_div.classList.remove('status-success');
+      status_div.classList.add('status-fail');
     }
   }
-  updateStatus(twitch_status_div, live_data.twitch_status, "Twitch",
+  updateStatus(twitch_status_div, live_data.twitch_status, 'Twitch',
     live_data.twitch_streamer_objs.length);
-  updateStatus(mixer_status_div, live_data.mixer_status, "Mixer",
+  updateStatus(mixer_status_div, live_data.mixer_status, 'Mixer',
     live_data.mixer_streamer_objs.length);
-  updateStatus(youtube_status_div, live_data.youtube_status, "YouTube",
+  updateStatus(youtube_status_div, live_data.youtube_status, 'YouTube',
     live_data.youtube_streamer_objs.length);
 }
 
@@ -101,16 +101,26 @@ function getStreamerObjsAndUpdatePopup() {
 
     $('#spinner').css('display', 'none');
     if (live_data.streamer_objs.length == 0) {
-      $('.slimScrollDiv').css('display', 'none');
-      $('empty-list-msg').css('display', 'block');
+      if (!live_data.twitch_status &&
+          !live_data.mixer_status &&
+          !live_data.youtube_status) {
+        $('.slimScrollDiv').css('display', 'none');
+        $('#empty-list-msg').css('display', 'none');
+        $('#no-login-msg').css('display', 'block');
+      } else {
+        $('.slimScrollDiv').css('display', 'none');
+        $('#empty-list-msg').css('display', 'block');
+        $('#no-login-msg').css('display', 'none');
+      }
     } else {
-      $('empty-list-msg').css('display', 'none');
+      $('#no-login-msg').css('display', 'none');
+      $('#empty-list-msg').css('display', 'none');
       $('.slimScrollDiv').css('display', 'block');
     }
 
     // Remove slimScroll if the container is below the max height. Uses
     // insanely gross jQuery hacks to disable/enable scroll events.
-    let event_fns = $._data($("#live-list")[0], 'events');
+    let event_fns = $._data($('#live-list')[0], 'events');
     if (live_data.streamer_objs.length <= 9) {
       // Save the scrollwheel visibility event for later when we need it.
       if (mouseover_scroll_fn === undefined) {

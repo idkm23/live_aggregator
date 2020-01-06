@@ -47,7 +47,7 @@ body {
 .status-fail {
   --color_fill: grey;
 }
-#empty-list-msg {
+.info-msg {
   display: None;
   margin: 20px 0;
   text-align: center;

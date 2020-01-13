@@ -7,6 +7,7 @@
     "cookies",
     "declarativeContent",
     "storage",
+    "tabs",
     "*://*.youtube.com/",
     "*://*.twitch.tv/",
     "*://*.mixer.com/"
@@ -15,6 +16,15 @@
   "background": {
     "page": "background.html"
   },
+  "content_scripts": [ {
+      "js":      [ 
+        "libs/jquery-3.4.1.min.js",
+        "inject_twitch.js"
+      ],
+      "css":     [ "css/inject_twitch.css" ],
+      "matches": [ "https://www.twitch.tv/*" ],
+      "run_at": "document_start"
+  } ],
   "browser_action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -24,5 +34,8 @@
   "icons": {
     "128": "images/live_aggregator.png"
   },
+  "web_accessible_resources": [
+    "util.js"
+  ],
   "manifest_version": 2
 }

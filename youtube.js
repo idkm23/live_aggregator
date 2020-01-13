@@ -91,7 +91,7 @@ const buildStreamerObj = renderer => {
     return {
       avatar: renderer.thumbnail.thumbnails[0].url,
       name: renderer.title,
-      game: '', // No easy API for this.
+      game: 'None', // No easy API for this.
       view_count: 0, // No easy API for this, filled later.
       link: 'https://www.youtube.com/channel/' +
         renderer.navigationEndpoint.browseEndpoint.browseId + '/live',
@@ -109,6 +109,9 @@ class YoutubeFetcher {
   constructor() {
     // Whether the last fetch was successful.
     this.status = false;
+
+    // Used to expire a successful status.
+    this.last_success = -1;
 
     // The last retrieved streamer objects fetched. If there was a failure,
     // return [].
@@ -162,6 +165,7 @@ class YoutubeFetcher {
           });
           if (found_subs) {
             this.status = true;
+            this.last_success = Date.now();
           } else {
             this.status = false;
           }

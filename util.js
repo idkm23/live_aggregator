@@ -49,7 +49,54 @@ const makeRestRequest = options => {
   });
 };
 
+const sendMessagePromise = topic => {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({topic: topic}, response => {
+      if (response) {
+        resolve(response);
+      } else {
+        reject('Failed to sendMessage for topic: ', topic);
+      }
+    });
+  });
+};
+
+// Retrieves streamer objs immediately on the first iteration so we can put
+// data infront of the user ASAP. Subsequent calls block until we get an
+// update from background.
+class GetStreamerObjs {
+  static _is_first_run = true;
+  static get() {
+    let method;
+    if (GetStreamerObjs._is_first_run) {
+      method = 'getStreamerObjs';
+      GetStreamerObjs._is_first_run = false;
+    } else {
+      method = 'getNewStreamerObjs';
+    }
+    return sendMessagePromise(method);
+  }
+}
+
+const timeout = ms => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+};
+
+const numFormatter = num => {
+  if (typeof num == 'string') {
+    return 0;
+  }
+  if (num >= 1000000) {
+    return Math.round(num/100000)/10 + 'M';
+  } else if (num >= 1000) {
+    return Math.round(num/100)/10 + 'K';
+  } else {
+    return num;
+  }
+}
+
 export {
-  Platform, makeRestRequest, getCookie
+  Platform, makeRestRequest, getCookie, sendMessagePromise, GetStreamerObjs,
+  timeout, numFormatter
 };
 export default {};

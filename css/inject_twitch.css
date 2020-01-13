@@ -1,0 +1,11 @@
+/* Default color for the live symbol. We don't add twitch symbols, so this 
+ * acts as the Twitch one. */
+.tw-channel-status-indicator {
+  background-color: rgb(169, 112, 255) !important;
+}
+.live-agg-platform-color-mixer {
+  background-color: #4ab8eb !important;
+}
+.live-agg-platform-color-youtube {
+  background-color: rgb(204, 0, 0) !important;
+}

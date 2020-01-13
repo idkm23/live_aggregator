@@ -63,6 +63,9 @@ class TwitchFetcher {
     // Whether the last fetch was successful.
     this.status = false;
 
+    // Used to expire a successful status.
+    this.last_success = -1;
+
     // The last retrieved streamer objects fetched. If there was a failure,
     // return [].
     this.streamer_objs = [];
@@ -78,6 +81,7 @@ class TwitchFetcher {
         .then(followers_response => {
           this.streamer_objs = responseToStreamerObjs(followers_response);
           this.status = true;
+          this.last_success = Date.now();
           resolve(this.streamer_objs);
         })
         .catch(error => {

@@ -1,6 +1,6 @@
 'use strict';
 
-import { getCookie, makeRestRequest, Platform } from './util.js';
+import { getCookie, makeRestRequest, Platform, timeout } from './util.js';
 import { TwitchFetcher } from './twitch.js';
 import { MixerFetcher } from './mixer.js';
 import { YoutubeFetcher } from './youtube.js';
@@ -25,7 +25,8 @@ function fetchStreamerObjs() {
     streamer_objs = twitch_fetcher.streamer_objs
       .concat(mixer_fetcher.streamer_objs)
       .concat(youtube_fetcher.streamer_objs);
-    chrome.browserAction.setBadgeText({text: streamer_objs.length.toString()});
+    chrome.browserAction.setBadgeText(
+      {text: streamer_objs.length.toString()});
 
     streamer_objs = streamer_objs.sort((a, b) => {
       if (a.view_count > b.view_count) {
@@ -47,29 +48,52 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-async function waitForLiveData() {
-  if (streamer_objs.length === 0) {
+async function waitForLiveData(must_be_new) {
+  if (must_be_new || streamer_objs.length === 0) {
+    console.log('waiting long');
     await streamer_objs_promise;
+    console.log('waiting longer');
   }
+  console.log('leggo');
+  console.log(youtube_fetcher.streamer_objs);
   return {
     streamer_objs: streamer_objs,
-    twitch_streamer_objs: twitch_fetcher.streamer_objs,
-    mixer_streamer_objs: mixer_fetcher.streamer_objs,
-    youtube_streamer_objs: youtube_fetcher.streamer_objs,
-    twitch_status: twitch_fetcher.status,
-    mixer_status: mixer_fetcher.status,
-    youtube_status: youtube_fetcher.status
+    twitch_info: {
+      streamer_objs: twitch_fetcher.streamer_objs,
+      status: twitch_fetcher.status,
+      last_success: twitch_fetcher.last_success
+    },
+    mixer_info: {
+      streamer_objs: mixer_fetcher.streamer_objs,
+      status: mixer_fetcher.status,
+      last_success: mixer_fetcher.last_success
+    },
+    youtube_info: {
+      streamer_objs: youtube_fetcher.streamer_objs,
+      status: youtube_fetcher.status,
+      last_success: youtube_fetcher.last_success
+    }
   };
 }
 
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.topic === 'getStreamerObjs') {
-    waitForLiveData().then(sendResponse);
+  if (msg.topic === 'getNewStreamerObjs') {
+    waitForLiveData(true).then(sendResponse);
+  } else if (msg.topic === 'getStreamerObjs') {
+    waitForLiveData(false).then(sendResponse);
   }
   return true;
 });
 
-streamer_objs_promise = fetchStreamerObjs();
-setInterval(() => {
-  streamer_objs_promise = fetchStreamerObjs();
-}, 15000);
+const mainLoop = async () => {
+  while (true) {
+    streamer_objs_promise = Promise.all([
+        fetchStreamerObjs(),
+        timeout(15000)
+    ]);
+    await streamer_objs_promise;
+  }
+};
+
+mainLoop();

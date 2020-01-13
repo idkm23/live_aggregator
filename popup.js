@@ -1,18 +1,7 @@
 'use strict';
 
-import Platform from './util.js';
-
-function sendMessagePromise(topic) {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage({topic: topic}, response => {
-      if (response) {
-        resolve(response);
-      } else {
-        reject('Failed to sendMessage for topic: ', topic);
-      }
-    });
-  });
-}
+import {Platform, GetStreamerObjs, numFormatter} from './util.js';
+var first_run = true;
 
 function addStreamToExtensionPopup(stream_obj, ol) {
   let live_row = $(`
@@ -51,19 +40,6 @@ function addStreamToExtensionPopup(stream_obj, ol) {
   ol.append(live_row);
 }
 
-function numFormatter(num) {
-  if (typeof num == 'string') {
-    return 0;
-  }
-  if (num >= 1000000) {
-    return Math.round(num/100000)/10 + 'M';
-  } else if (num >= 1000) {
-    return Math.round(num/100)/10 + 'K';
-  } else {
-    return num;
-  }
-}
-
 var twitch_status_div = document.getElementById('twitch-status-wrap');
 var mixer_status_div = document.getElementById('mixer-status-wrap');
 var youtube_status_div = document.getElementById('youtube-status-wrap');
@@ -80,17 +56,18 @@ function updateStatuses(live_data) {
       status_div.classList.add('status-fail');
     }
   }
-  updateStatus(twitch_status_div, live_data.twitch_status, 'Twitch',
-    live_data.twitch_streamer_objs.length);
-  updateStatus(mixer_status_div, live_data.mixer_status, 'Mixer',
-    live_data.mixer_streamer_objs.length);
-  updateStatus(youtube_status_div, live_data.youtube_status, 'YouTube',
-    live_data.youtube_streamer_objs.length);
+  updateStatus(twitch_status_div, live_data.twitch_info.status, 'Twitch',
+    live_data.twitch_info.streamer_objs.length);
+  updateStatus(mixer_status_div, live_data.mixer_info.status, 'Mixer',
+    live_data.mixer_info.streamer_objs.length);
+  updateStatus(youtube_status_div, live_data.youtube_info.status, 'YouTube',
+    live_data.youtube_info.streamer_objs.length);
 }
 
 var mouseover_scroll_fn;
 function getStreamerObjsAndUpdatePopup() {
-  sendMessagePromise('getStreamerObjs').then((live_data) => {
+  return GetStreamerObjs.get().then((live_data) => {
+    console.log('hello');
     // Fix height so there isn't any crazy height adjustments until after we
     // update.
     $('#live-list').css('height', $('#live-list').height());
@@ -150,5 +127,10 @@ $(() => {
   });
 });
 
-getStreamerObjsAndUpdatePopup();
-setInterval(() => getStreamerObjsAndUpdatePopup(), 6000);
+const main = async () => {
+  while (true) {
+    await getStreamerObjsAndUpdatePopup();
+  }
+};
+
+main();

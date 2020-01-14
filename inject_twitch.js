@@ -13,7 +13,6 @@ const main = async () => {
     let live_data = await GetStreamerObjs.get();
     streamer_objs = live_data.mixer_info.streamer_objs.concat(
         live_data.youtube_info.streamer_objs);
-    console.log(streamer_objs);
     refreshSidebar(streamer_objs, 'NEW_LIVE_DATA');
   }
 };
@@ -101,8 +100,9 @@ const addStreamerObjs = streamer_objs => {
 };
 
 var is_refreshSidebar_locked = false;
+var is_sidebar_ready = false;
 const refreshSidebar = (streamer_objs, debug_caller) => {
-  if (is_refreshSidebar_locked) {
+  if (is_refreshSidebar_locked || !is_sidebar_ready) {
     return;
   }
   is_refreshSidebar_locked = true;
@@ -110,7 +110,6 @@ const refreshSidebar = (streamer_objs, debug_caller) => {
     is_refreshSidebar_locked = false;
   }, 1500);
 
-  console.log('REFRESHING LIVE AGGREGATOR ' + debug_caller);
   $(LIVE_ENTRY_CLASS).find('.live-agg-followed-channel').remove();
   addStreamerObjs(streamer_objs);
 };
@@ -124,12 +123,11 @@ $(document).ready(() => {
     GetStreamerObjs = util.GetStreamerObjs;
     numFormatter = util.numFormatter;
   })().then(() => {
-    let first_mutation = true;
     // Monitor when twitch updates sidebar, so we can reupdate.
     sidebar_watcher = new window.MutationObserver(mutations => {
-      if (first_mutation) {
+      if (!is_sidebar_ready) {
         showMore();
-        first_mutation = false;
+        is_sidebar_ready = true;
       }
       refreshSidebar(streamer_objs, 'MUTATOR');
     });

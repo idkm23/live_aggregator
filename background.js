@@ -90,7 +90,7 @@ const mainLoop = async () => {
   while (true) {
     streamer_objs_promise = Promise.all([
         fetchStreamerObjs(),
-        timeout(15000)
+        timeout(60000)
     ]);
     await streamer_objs_promise;
   }

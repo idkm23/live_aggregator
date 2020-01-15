@@ -11,6 +11,7 @@ var youtube_fetcher = new YoutubeFetcher();
 var streamer_objs = [];
 
 var streamer_objs_promise;
+var throttled_streamer_objs_promise;
 
 function fetchStreamerObjs() {
   return new Promise(async (resolve, reject) => {
@@ -49,13 +50,16 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 async function waitForLiveData(must_be_new) {
-  if (must_be_new || streamer_objs.length === 0) {
-    console.log('waiting long');
+  if (must_be_new) {
+    console.log('waiting for throttled live data');
+    await throttled_streamer_objs_promise;
+    console.log('done waiting for throttled live data');
+  } else if (streamer_objs.length === 0) {
+    console.log('waiting for first live data');
     await streamer_objs_promise;
-    console.log('waiting longer');
+    console.log('done waiting for first live data');
   }
-  console.log('leggo');
-  console.log(youtube_fetcher.streamer_objs);
+  console.log(streamer_objs);
   return {
     streamer_objs: streamer_objs,
     twitch_info: {
@@ -88,11 +92,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 const mainLoop = async () => {
   while (true) {
-    streamer_objs_promise = Promise.all([
-        fetchStreamerObjs(),
+    streamer_objs_promise = fetchStreamerObjs();
+    throttled_streamer_objs_promise = Promise.all([
+        streamer_objs_promise,
         timeout(60000)
     ]);
-    await streamer_objs_promise;
+    await throttled_streamer_objs_promise;
   }
 };
 

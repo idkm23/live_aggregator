@@ -51,7 +51,7 @@ function updateStatuses(live_data) {
       status_div.classList.remove('status-fail');
       status_div.classList.add('status-success');
     } else {
-      status_div.setAttribute('title', `Failed to reach ${platform}, or you're not logged in.`);
+      status_div.setAttribute('title', `Failed to reach ${platform}, or you're not logged in`);
       status_div.classList.remove('status-success');
       status_div.classList.add('status-fail');
     }

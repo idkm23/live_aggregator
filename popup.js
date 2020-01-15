@@ -125,6 +125,10 @@ $(() => {
     barClass: 'scroll-bar',
     opacity: 0.7
   });
+
+  $("#logo").hover(
+    () => { $('#logo').attr("src", "images/YEPPERS.gif"); },
+    () => { $('#logo').attr("src", "images/live_aggregator.png"); });
 });
 
 const main = async () => {

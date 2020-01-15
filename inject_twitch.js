@@ -109,6 +109,7 @@ const refreshSidebar = (streamer_objs, debug_caller) => {
   setTimeout(() => {
     is_refreshSidebar_locked = false;
   }, 1500);
+  console.log(`Live-Aggregator: Updating sidebar (reason: ${debug_caller}`));
 
   $(LIVE_ENTRY_CLASS).find('.live-agg-followed-channel').remove();
   addStreamerObjs(streamer_objs);

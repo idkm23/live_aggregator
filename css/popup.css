@@ -4,10 +4,54 @@ html {
 body {
   margin: 0px !important;
   border: 1px solid rgb(31, 31, 35);
-  background-color: rgb(31, 31, 35); /*rgb(24, 24, 27);*/
   min-width: 240px;
-  /*min-height: 64.4px;*/
 }
+#main {
+  background-color: rgb(24, 24, 27);
+}
+
+.header-footer {
+  background-color: rgb(31, 31, 35);
+}
+
+#header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: solid 1px rgba(255, 255, 255, 0.1);
+}
+#left-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  align-items: center;
+}
+#logo {
+  height: 20px;
+}
+#title {
+  margin: 0;
+  color: rgb(239, 239, 241);
+  font-family: Roobert, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600!important;
+  cursor: default;
+  white-space: nowrap;
+}
+.header-element {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  width: 40px;
+}
+#settings-icon {
+  --gear_color_fill: rgb(239, 239, 241);
+  height: 20px;
+  width: 20px;
+}
+
 #spinner {
   width: 20px;
   height: 20px;
@@ -34,12 +78,17 @@ body {
 }
 #status-bar-inner {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   padding: 5px 60px;
 }
 .status-icon {
   width: 20px;
   height: 20px;
+}
+.status-success, .status-fail {
+  display: flex;
+  align-items: center;
 }
 .status-success {
   --color_fill: rgb(24, 194, 0);
@@ -116,6 +165,9 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.stream-name {
+  font-weight: 600!important;
 }
 .stream-game {
   /* Streamers don't necessarily need to be under a game */

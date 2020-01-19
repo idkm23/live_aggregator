@@ -1,6 +1,8 @@
 'use strict';
 
-import { getCookie, makeRestRequest, Platform, timeout } from './util.js';
+import {
+  getCookie, sendMessagePromise, makeRestRequest, Platform, timeout
+} from './util.js';
 import { TwitchFetcher } from './twitch.js';
 import { MixerFetcher } from './mixer.js';
 import { YoutubeFetcher } from './youtube.js';
@@ -40,14 +42,14 @@ function fetchStreamerObjs() {
   });
 }
 
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {
-    chrome.declarativeContent.onPageChanged.addRules([{
-      conditions: [new chrome.declarativeContent.PageStateMatcher({})],
-      actions: [new chrome.declarativeContent.ShowPageAction()]
-    }]);
-  });
-});
+//chrome.runtime.onInstalled.addListener(() => {
+//  chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {
+//    chrome.declarativeContent.onPageChanged.addRules([{
+//      conditions: [new chrome.declarativeContent.PageStateMatcher({})],
+//      actions: [new chrome.declarativeContent.ShowPageAction()]
+//    }]);
+//  });
+//});
 
 async function waitForLiveData(must_be_new) {
   if (must_be_new) {
@@ -86,6 +88,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     waitForLiveData(true).then(sendResponse);
   } else if (msg.topic === 'getStreamerObjs') {
     waitForLiveData(false).then(sendResponse);
+  } else if (msg.topic === 'updateSidebarInjectionFlag') {
+    chrome.tabs.query({}, function(tabs) {
+      for (var i=0; i<tabs.length; ++i) {
+        chrome.tabs.sendMessage(tabs[i].id, msg);
+      }
+      sendResponse({status: true});
+    });
   }
   return true;
 });

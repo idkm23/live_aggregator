@@ -6,22 +6,31 @@
   <body>
     <div id="main">
       <div id="header" class="header-footer">
-        <div id="left-header">
-          <div class="header-element">
-            <img id="logo" src="images/live_aggregator.png" />
-          </div>
-          <p id="title">LIVE AGGREGATOR</p>
-        </div>
         <div class="header-element">
-          <svg id="settings-icon">
+          <img id="logo" src="images/live_aggregator.png" />
+        </div>
+        <p id="title">LIVE AGGREGATOR</p>
+        <div class="header-element">
+          <svg id="settings-icon" tabindex="0">
             <use href="images/gear.svg#icon"></use>
           </svg>
         </div>
       </div>
-      <div id="no-login-msg" class="info-msg">You"re logged out of everything.</div>
-      <div id="empty-list-msg" class="info-msg">No one"s online right now.</div>
-      <div id="spinner"></div>
-      <ol id="live-list"></ol>
+      <div id="settings-menu">
+        <div class="setting-row">
+          <p class="setting-label">Twitch Sidebar Injection</p>
+          <label class="toggle-switch">
+            <input type="checkbox" id="twitch-sidebar-injection" class="ts-input">
+            <span class="ts-button"></span>
+          </label>
+        </div>
+      </div>
+      <div id="live-list-loading-and-messages">
+        <div id="no-login-msg" class="info-msg">You're logged out of everything.</div>
+        <div id="empty-list-msg" class="info-msg">No one's online right now.</div>
+        <div id="spinner"></div>
+        <ol id="live-list"></ol>
+      </div>
       <div id="status-bar" class="header-footer">
         <div id="status-bar-inner">
           <div id="twitch-status-wrap" class="status-fail">

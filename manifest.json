@@ -12,7 +12,6 @@
     "*://*.twitch.tv/",
     "*://*.mixer.com/"
   ],
-  "options_page": "options.html",
   "background": {
     "page": "background.html"
   },

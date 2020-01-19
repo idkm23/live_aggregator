@@ -49,13 +49,17 @@ const makeRestRequest = options => {
   });
 };
 
-const sendMessagePromise = topic => {
+const sendMessagePromise = (topic, data) => {
   return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage({topic: topic}, response => {
+    chrome.runtime.sendMessage({
+      topic: topic,
+      data: data
+    }, response => {
       if (response) {
         resolve(response);
       } else {
-        reject('Failed to sendMessage for topic: ', topic);
+        console.log(response);
+        reject(`Failed to sendMessage for '${topic}' with ${response}`);
       }
     });
   });

@@ -5,15 +5,37 @@ const LIVE_ENTRY_CLASS = '.side-nav-section .tw-relative.tw-transition-group';
 // Dynamic imports because content_scripts suck.
 var GetStreamerObjs;
 var numFormatter;
+var is_injection_enabled = false;
+chrome.storage.sync.get('twitch_sidebar_injection', function(data) {
+  is_injection_enabled = data.twitch_sidebar_injection;
+});
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.topic === 'updateSidebarInjectionFlag') {
+    is_injection_enabled = msg.data;
+    console.log(msg);
+    if (msg.data) {
+      refreshSidebar(streamer_objs, 'ENABLED_IN_POPUP_SETTINGS');
+    } else {
+      $(LIVE_ENTRY_CLASS).find('.live-agg-followed-channel').remove();
+    }
+  }
+  sendResponse(true);
+  return true;
+});
 
 // Non-twitch streamer_objs.
 var streamer_objs = [];
 const main = async () => {
   while (true) {
-    let live_data = await GetStreamerObjs.get();
-    streamer_objs = live_data.mixer_info.streamer_objs.concat(
-        live_data.youtube_info.streamer_objs);
-    refreshSidebar(streamer_objs, 'NEW_LIVE_DATA');
+    try {
+      let live_data = await GetStreamerObjs.get();
+      streamer_objs = live_data.mixer_info.streamer_objs.concat(
+          live_data.youtube_info.streamer_objs);
+      refreshSidebar(streamer_objs, 'NEW_LIVE_DATA');
+    } catch (e) {
+      console.err(`LiveAggregator failed to fetch from background ${e}`);
+    }
   }
 };
 
@@ -102,15 +124,14 @@ const addStreamerObjs = streamer_objs => {
 var is_refreshSidebar_locked = false;
 var is_sidebar_ready = false;
 const refreshSidebar = (streamer_objs, debug_caller) => {
-  if (is_refreshSidebar_locked || !is_sidebar_ready) {
+  if (!is_injection_enabled || is_refreshSidebar_locked || !is_sidebar_ready) {
     return;
   }
   is_refreshSidebar_locked = true;
   setTimeout(() => {
     is_refreshSidebar_locked = false;
   }, 1500);
-  console.log(`Live-Aggregator: Updating sidebar (reason: ${debug_caller}`));
-
+  console.log(`Live-Aggregator: Updating sidebar (reason: ${debug_caller})`);
   $(LIVE_ENTRY_CLASS).find('.live-agg-followed-channel').remove();
   addStreamerObjs(streamer_objs);
 };

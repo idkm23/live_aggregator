@@ -1,6 +1,9 @@
 'use strict';
 
-import {Platform, GetStreamerObjs, numFormatter} from './util.js';
+import {
+  Platform, GetStreamerObjs, numFormatter, sendMessagePromise
+} from './util.js';
+
 var first_run = true;
 
 function addStreamToExtensionPopup(stream_obj, ol) {
@@ -67,7 +70,6 @@ function updateStatuses(live_data) {
 var mouseover_scroll_fn;
 function getStreamerObjsAndUpdatePopup() {
   return GetStreamerObjs.get().then((live_data) => {
-    console.log('hello');
     // Fix height so there isn't any crazy height adjustments until after we
     // update.
     $('#live-list').css('height', $('#live-list').height());
@@ -81,18 +83,18 @@ function getStreamerObjsAndUpdatePopup() {
       if (!live_data.twitch_status &&
           !live_data.mixer_status &&
           !live_data.youtube_status) {
-        $('.slimScrollDiv').css('display', 'none');
+        $('#live-list').css('display', 'none');
         $('#empty-list-msg').css('display', 'none');
         $('#no-login-msg').css('display', 'block');
       } else {
-        $('.slimScrollDiv').css('display', 'none');
+        $('#live-list').css('display', 'none');
         $('#empty-list-msg').css('display', 'block');
         $('#no-login-msg').css('display', 'none');
       }
     } else {
       $('#no-login-msg').css('display', 'none');
       $('#empty-list-msg').css('display', 'none');
-      $('.slimScrollDiv').css('display', 'block');
+      $('#live-list').css('display', 'block');
     }
 
     // Remove slimScroll if the container is below the max height. Uses
@@ -125,10 +127,80 @@ $(() => {
     barClass: 'scroll-bar',
     opacity: 0.7
   });
+  $('#live-list').css('height', 'auto');
+  $('.slimScrollDiv').css('height', 'auto');
 
-  $("#logo").hover(
-    () => { $('#logo').attr("src", "images/YEPPERS.gif"); },
-    () => { $('#logo').attr("src", "images/live_aggregator.png"); });
+  var is_yepping = false;
+  $('#logo').hover(
+    () => {
+      is_yepping = true;
+      $('#logo').attr('src', 'images/YEPPERS.gif');
+    },
+    () => {
+      is_yepping = false;
+      $('#logo').attr('src', 'images/live_aggregator.png');
+    });
+
+  // Make pepe look at user randomly.
+  setInterval(() => {
+    if (!is_yepping && Math.random() < 0.4) {
+      $('#logo').attr('src', 'images/live_aggregator_stare.png');
+      setTimeout(() => {
+        if (!is_yepping) {
+          $('#logo').attr('src', 'images/live_aggregator.png');
+        }
+      }, 5000);
+    }
+  }, 10000);
+
+  var in_settings = false;
+  $('#settings-icon').click(() => {
+    if (in_settings) {
+      in_settings = false;
+      $('#settings-menu').css('display', 'none');
+      $('#live-list-loading-and-messages').css('display', 'block');
+
+      $('#settings-icon').css('box-shadow', 'none');
+    } else {
+      in_settings = true;
+      $('#settings-menu').css('display', 'block');
+      $('#live-list-loading-and-messages').css('display', 'none');
+
+      $('#settings-icon').css('box-shadow',
+        'rgb(119, 44, 232) 0px 0px 6px 0px');
+      $('#settings-icon').css('background-color',
+        'rgba(255, 255, 255, 0.15)');
+    }
+  });
+  $('#settings-icon').mouseover(() => {
+    $('#settings-icon').css('background-color',
+      'rgba(255, 255, 255, 0.15)');
+  }).mouseout(() => {
+    if (!in_settings) {
+      $('#settings-icon').css('background-color', 'initial');
+      $('#settings-icon').css('box-shadow', 'initial');
+    }
+  });
+  $('#settings-icon').mousedown(() => {
+    $('#settings-icon').css('box-shadow',
+      'rgb(119, 44, 232) 0px 0px 6px 0px');
+  });
+  $('#settings-icon').mouseup(() => {
+    $('#settings-icon').css('box-shadow', 'initial');
+  });
+
+  chrome.storage.sync.get('twitch_sidebar_injection', function(data) {
+    if (data.twitch_sidebar_injection) {
+      $('#twitch-sidebar-injection').prop('checked', true);
+    }
+    $('#twitch-sidebar-injection').on('change', () => {
+      let injection_setting = $('#twitch-sidebar-injection').is(':checked');
+      sendMessagePromise('updateSidebarInjectionFlag', injection_setting);
+      chrome.storage.sync.set({
+        twitch_sidebar_injection: injection_setting
+      });
+    });
+  });
 });
 
 const main = async () => {

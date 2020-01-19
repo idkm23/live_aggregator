@@ -5,7 +5,6 @@
   "permissions": [
     "activeTab",
     "cookies",
-    "declarativeContent",
     "storage",
     "tabs",
     "*://*.youtube.com/",

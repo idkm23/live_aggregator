@@ -42,15 +42,6 @@ function fetchStreamerObjs() {
   });
 }
 
-//chrome.runtime.onInstalled.addListener(() => {
-//  chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {
-//    chrome.declarativeContent.onPageChanged.addRules([{
-//      conditions: [new chrome.declarativeContent.PageStateMatcher({})],
-//      actions: [new chrome.declarativeContent.ShowPageAction()]
-//    }]);
-//  });
-//});
-
 async function waitForLiveData(must_be_new) {
   if (must_be_new) {
     console.log('waiting for throttled live data');

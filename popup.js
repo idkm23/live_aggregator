@@ -80,9 +80,9 @@ function getStreamerObjsAndUpdatePopup() {
 
     $('#spinner').css('display', 'none');
     if (live_data.streamer_objs.length == 0) {
-      if (!live_data.twitch_status &&
-          !live_data.mixer_status &&
-          !live_data.youtube_status) {
+      if (!live_data.twitch_info.status &&
+          !live_data.mixer_info.status &&
+          !live_data.youtube_info.status) {
         $('#live-list').css('display', 'none');
         $('#empty-list-msg').css('display', 'none');
         $('#no-login-msg').css('display', 'block');
@@ -200,6 +200,35 @@ $(() => {
         twitch_sidebar_injection: injection_setting
       });
     });
+  });
+  
+  $('.status-icon').click(function(e) {
+    if ($('#status-popup').css('visibility') == 'hidden') {
+      $('.status-popup-bubble').text($(this).parent().attr('title'));
+      let w = $('#status-popup').width();
+      let BORDER_MARGIN = 70;
+      if ($(this).is('#twitch-status')) {
+        $('#status-popup').css('right', 'unset');
+        $('#status-popup').css('left', (BORDER_MARGIN - w/2) + 'px');
+        $('#status-popup').css('margin-left', 0);
+      } else if ($(this).is('#mixer-status')) {
+        $('#status-popup').css('right', 'unset');
+        $('#status-popup').css('left', '50%');
+        $('#status-popup').css('margin-left', -w/2 + 'px');
+      } else if ($(this).is('#youtube-status')) {
+        $('#status-popup').css('right', (BORDER_MARGIN - w/2) + 'px');
+        $('#status-popup').css('left', 'unset');
+        $('#status-popup').css('margin-left', 0);
+      }
+
+      $('#status-popup').css('visibility', 'visible');
+      e.stopPropagation();
+    } else {
+      $('#status-popup').css('visibility', 'hidden');
+    }
+  });
+  $(document).click(function() {
+    $('#status-popup').css('visibility', 'hidden');
   });
 });
 

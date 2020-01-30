@@ -34,7 +34,7 @@ const main = async () => {
           live_data.youtube_info.streamer_objs);
       refreshSidebar(streamer_objs, 'NEW_LIVE_DATA');
     } catch (e) {
-      console.err(`LiveAggregator failed to fetch from background ${e}`);
+      console.error(`LiveAggregator failed to fetch from background ${e}`);
     }
   }
 };

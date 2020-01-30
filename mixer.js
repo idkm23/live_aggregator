@@ -2,21 +2,20 @@
 
 import { getCookie, makeRestRequest, Platform } from './util.js';
 
-// Fetches the active user's Mixer ID (not user-facing number).
 const fetchUserId = () => {
-    return new Promise((resolve, reject) => {
-      makeRestRequest({
-        method: 'GET',
-        url: 'https://mixer.com/api/v1/users/current',
-        headers: {},
-        json: true
-      })
-      .then(response => {
-        resolve(response.id);
-      })
-      .catch(reject);
-    });
-  };
+  return new Promise((resolve, reject) => {
+    makeRestRequest({
+      method: 'GET',
+      url: 'https://mixer.com/api/v1/users/current',
+      headers: {},
+      json: true
+    })
+    .then(response => {
+      resolve(response.id);
+    })
+    .catch(reject);
+  });
+};
 
 const fetchFollowedChannels = user_id => {
     return makeRestRequest({

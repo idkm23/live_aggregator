@@ -97,6 +97,7 @@ input {
   padding: 5px 60px;
 }
 .status-icon {
+  cursor: pointer;
   width: 20px;
   height: 20px;
 }
@@ -110,6 +111,32 @@ input {
 .status-fail {
   --color_fill: grey;
 }
+#status-popup {
+  visibility: hidden;
+  position: absolute;
+  bottom: 33px;
+  left: 10px;
+}
+.status-popup-arrow {
+  position: relative;
+  margin: auto;
+  bottom: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  transform: rotate(45deg);
+  background-color: white;
+}
+.status-popup-bubble {
+  background-color: white;
+  border-radius: 5px;
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 4px 8px 0px, rgba(0, 0, 0, 0.4) 0px 0px 4px 0px;
+  padding: 3px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: black;
+}
+
 .info-msg {
   display: None;
   margin: 20px 0;

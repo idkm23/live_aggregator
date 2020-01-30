@@ -13,22 +13,23 @@ const fetchYtcfg = () => {
       headers: {}
     })
     .then((response) => {
-        var fake_html = document.createElement('html');
-        fake_html.innerHTML = response;
-        Array.prototype.slice.call(fake_html.getElementsByTagName('script')).forEach(script => {
-          let script_str = script.innerHTML;
-          if (script_str.includes('XSRF_TOKEN')) {
-            let xsrf_matches = script_str.match(
-                new RegExp('"XSRF_TOKEN":"([a-zA-Z0-9]+=)"'));
-            let client_matches = script_str.match(
-                new RegExp('"INNERTUBE_CONTEXT_CLIENT_VERSION":"([\\d.]+)"'));
-            if (xsrf_matches.length == 2 && client_matches.length == 2) {
-              resolve({
-                XSRF_TOKEN: xsrf_matches[1],
-                INNERTUBE_CONTEXT_CLIENT_VERSION: client_matches[1]
-              });
-            }
+      var fake_html = document.createElement('html');
+      fake_html.innerHTML = response;
+      let scripts = fake_html.getElementsByTagName('script')
+      Array.prototype.slice.call(scripts).forEach(script => {
+        let script_str = script.innerHTML;
+        if (script_str.includes('XSRF_TOKEN')) {
+          let xsrf_matches = script_str.match(
+              new RegExp('"XSRF_TOKEN":"([a-zA-Z0-9]+=)"'));
+          let client_matches = script_str.match(
+              new RegExp('"INNERTUBE_CONTEXT_CLIENT_VERSION":"([\\d.]+)"'));
+          if (xsrf_matches.length == 2 && client_matches.length == 2) {
+            resolve({
+              XSRF_TOKEN: xsrf_matches[1],
+              INNERTUBE_CONTEXT_CLIENT_VERSION: client_matches[1]
+            });
           }
+        }
       });
       reject('Couldn\'t fetch YouTube ytcfg.');
     })
@@ -68,19 +69,22 @@ const fetchLiveWatchPageData = url => {
           watch_page_data.title = title_elements[i].text;
         }
       }
-      Array.prototype.slice.call(fake_html.getElementsByTagName('script')).forEach(script => {
+      let scripts = fake_html.getElementsByTagName('script');
+      Array.prototype.slice.call(scripts).forEach(script => {
         let script_str = script.innerHTML;
         if (script_str.includes('watching now')) {
           let viewers_matches = script_str.match(
               new RegExp('([\\d,]+)\ watching\ now'));
           if (viewers_matches.length >= 2) {
-            watch_page_data.view_count = parseInt(viewers_matches[1].replace(',', ''));
+            watch_page_data.view_count = parseInt(
+                viewers_matches[1].replace(',', ''));
             resolve(watch_page_data);
           } else {
             reject(`Failed to regex view count for ${url}`);
           }
         }
       });
+      reject(`Failed to find 'watching now' for ${url}, stream probably wen't offline`);
     })
     .catch(reject);
   });
